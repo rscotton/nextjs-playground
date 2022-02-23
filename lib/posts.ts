@@ -6,7 +6,19 @@ import matter from 'gray-matter';
 
 const postsDirectory = path.join(process.cwd(), 'posts');
 
-export function getSortedPostsData() {
+export interface PostFrontMatterMetaData {
+  date: string;
+  title: string;
+}
+
+export type PostData = {
+  id: string;
+  contentHtml: string;
+} & PostFrontMatterMetaData;
+
+type PostIndexListing = Omit<PostData, 'contentHtml'>;
+
+export const getSortedPostsData = (): PostIndexListing[] => {
   // Get file names under /posts
   const fileNames = fs.readdirSync(postsDirectory);
   const allPostsData = fileNames.map((fileName) => {
@@ -23,7 +35,7 @@ export function getSortedPostsData() {
     // Combine the data with the id
     return {
       id,
-      ...matterResult.data,
+      ...(matterResult.data as PostFrontMatterMetaData),
     };
   });
   // Sort posts by date
@@ -36,9 +48,9 @@ export function getSortedPostsData() {
       return 0;
     }
   });
-}
+};
 
-export function getAllPostIds() {
+export const getAllPostIds = () => {
   const fileNames = fs.readdirSync(postsDirectory);
 
   // Returns an array that looks like this:
@@ -54,16 +66,14 @@ export function getAllPostIds() {
   //     }
   //   }
   // ]
-  return fileNames.map((fileName) => {
-    return {
-      params: {
-        id: fileName.replace(/\.md$/, ''),
-      },
-    };
-  });
-}
+  return fileNames.map((fileName) => ({
+    params: {
+      id: fileName.replace(/\.md$/, ''),
+    },
+  }));
+};
 
-export async function getPostData(id) {
+export const getPostData = async (id: string): Promise<PostData> => {
   const fullPath = path.join(postsDirectory, `${id}.md`);
   const fileContents = fs.readFileSync(fullPath, 'utf8');
 
@@ -80,6 +90,6 @@ export async function getPostData(id) {
   return {
     id,
     contentHtml,
-    ...matterResult.data,
+    ...(matterResult.data as PostFrontMatterMetaData),
   };
-}
+};
